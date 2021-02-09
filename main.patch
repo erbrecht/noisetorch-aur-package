@@ -1,0 +1,58 @@
+--- main.go	2021-01-31 01:57:33.000000000 -0500
++++ main.go.1	2021-02-09 09:45:40.142289991 -0500
+@@ -4,7 +4,6 @@
+ 	"flag"
+ 	"fmt"
+ 	"image"
+-	"io/ioutil"
+ 	"log"
+ 	"os"
+ 	"path/filepath"
+@@ -23,9 +22,7 @@
+ 	"github.com/aarzilli/nucular/style"
+ )
+ 
+-//go:generate go run scripts/embedbinary.go c/ladspa/rnnoise_ladspa.so librnnoise.go libRNNoise
+ //go:generate go run scripts/embedbinary.go assets/patreon.png patreon.go patreonPNG
+-//go:generate go run scripts/embedversion.go
+ //go:generate go run scripts/embedlicenses.go
+ 
+ type device struct {
+@@ -93,12 +90,9 @@
+ 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
+ 
+ 	initializeConfigIfNot()
+-	rnnoisefile := dumpLib()
+-	defer removeLib(rnnoisefile)
+ 
+ 	ctx := ntcontext{}
+ 	ctx.config = readConfig()
+-	ctx.librnnoise = rnnoisefile
+ 
+ 	paClient, err := pulseaudio.NewClient()
+ 
+@@ -217,24 +211,6 @@
+ 
+ }
+ 
+-func dumpLib() string {
+-	f, err := ioutil.TempFile("", "librnnoise-*.so")
+-	if err != nil {
+-		log.Fatalf("Couldn't open temp file for librnnoise\n")
+-	}
+-	f.Write(libRNNoise)
+-	log.Printf("Wrote temp librnnoise to: %s\n", f.Name())
+-	return f.Name()
+-}
+-
+-func removeLib(file string) {
+-	err := os.Remove(file)
+-	if err != nil {
+-		log.Printf("Couldn't delete temp librnnoise: %v\n", err)
+-	}
+-	log.Printf("Deleted temp librnnoise: %s\n", file)
+-}
+-
+ func getSources(client *pulseaudio.Client) []device {
+ 	sources, err := client.Sources()
+ 	if err != nil {
